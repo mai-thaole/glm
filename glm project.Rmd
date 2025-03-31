@@ -1,0 +1,214 @@
+---
+title: "project GLM"
+output: html_document
+date: "2025-02-28"
+---
+# upload dữ liệu phân tích
+```{R}
+data <- read.csv("C:/Users/DELL/Downloads/FINAL DATA (2).csv", header = TRUE, sep = ",")
+
+head(data)
+
+```
+Xóa hàng chứa NA
+```{R}
+data <- na.omit(data)  
+```
+
+#Mô tả các biến trong dữ liệu
+ ```{R}
+ colnames(data)
+ ```
+ Các biến trong bộ dữ liệu bao gồm:
+  [1] "Gender"          "Age"             "Education.level" "Income"          "AW1"            
+ [6] "AW2"             "AW3"             "AT1"             "AT2"             "AT3"            
+[11] "AT4"             "AT5"             "LR1"             "LR2"             "LR3"            
+[16] "LR4"             "SP1"             "SP2"             "SP3"             "EF1"            
+[21] "EF2"             "EF3"             "EF4"             "INC1"            "INC2"           
+[26] "INC3"            "INC4"            "RI1"             "RI2"             "RI3"            
+[31] "FACTOR1"         "FACTOR2"         "FACTOR3"         "FACTOR4"         "FACTOR5"        
+[36] "FACTOR6" 
+Cụ thể:
+Demographics 
+Gender: Giới tính (1-Nam; 2-Nữ)
+Age: Tuổi (0=15-22; 1=23-45)
+Education.level: Trình độ học vấn (1= Trung học phổ thông; 2= Đại học; 3=Sau đại học)
+Income: Thu nhập (1=Không có thu nhập; 2= <4 triệu; 3= 4-10 triệu; 4= >10 triệu)
+
+Nhận thức về rác thải điện tử (E-waste awareness)
+AW1: Thu gom và tái chế chất thải điện tử làm giảm việc khai thác tài nguyên làm nguyên liệu thô.
+AW2: Thu gom và tái chế rác thải điện tử giúp cải thiện chất lượng môi trường.
+AW3: Tái chế chất thải điện tử cho phép thu hồi các vật liệu có giá trị.
+
+Thái độ đối với việc thu gom và tái chế chất thải (Attitude towards waste collection and recycling)
+AT1: Thu gom rác thải điện tử đóng góp đáng kể cho xã hội.
+AT2: Tham gia thu gom và tái chế rác thải điện tử hỗ trợ sự phát triển bền vững.
+AT3: Tổ chức các hoạt động thu gom, tái chế rác thải điện tử là một giải pháp hữu ích.
+AT4: Mọi người đều có trách nhiệm tái chế rác thải điện tử.
+AT5: Tôi quan tâm đến ý tưởng thu gom rác thải điện tử
+
+Luật và quy định (Law and regulations)
+LR1: Pháp luật Việt Nam quy định trách nhiệm rõ ràng của công dân trong việc tái chế rác thải điện tử.
+LR2: Chính sách của chính phủ sẽ tác động đến hành vi tái chế chất thải điện tử.
+LR3: Tôi sẽ tuân thủ luật pháp và quy định liên quan đến tái chế chất thải điện tử.
+LR4: Tôi sẽ tham gia các khóa học về luật và quy định về thu gom và tái chế rác thải điện tử nếu có.
+
+Áp lực xã hội (Social pressure)
+SP1: Tôi sẽ tham gia thu gom và tái chế rác thải điện tử nếu gia đình và bạn bè tôi tham gia.
+SP2: Truyền thông ảnh hưởng đến việc thu gom và tái chế rác thải điện tử.
+SP3: Cộng đồng địa phương tác động đến sự tham gia của tôi trong việc thu gom và tái chế rác thải điện tử.
+
+Yếu tố kinh tế (Economic factors)
+EF1: Chi phí vận chuyển cao đối với việc tái chế rác thải điện tử.
+EF2: Phí thu gom và tái chế rác thải điện tử cao.
+EF3: Các chương trình tái chế có chi phí đắt đỏ.
+EF4: Lợi ích khi tham gia thu gom và tái chế rác thải điện tử: khuyến mãi, ưu đãi, v.v.
+
+Sự bất tiện (Inconveniences)
+INC1: Tôi thấy khó phân loại rác thải điện tử để tái chế.
+INC2: Tôi không có thời gian mang rác thải điện tử đến điểm thu gom.
+INC3: Tôi thấy việc vận chuyển rác thải điện tử đến điểm thu gom rất bất tiện.
+INC4: Các chương trình thu gom rác thải điện tử hiện tại thiếu các điểm thu gom.
+
+Ý định tái chế (Recycling intention)
+RI1: Tôi sẵn sàng tham gia các mô hình thu gom rác thải điện tử khi có sẵn.
+
+
+#Ước lượng mô hình
+Vì thang đo của biến phụ thuộc RI1 không có phản hồi ở hoàn toàn không đồng ý, không đồng ý; chỉ có phản hồi ở mức trung lập, đồng ý, hoàn toàn đồng ý. Do vậy, phản hồi sẽ được chuyển từ 3,4,5 thành 1,2,3. Sau đó, chuyển biến RI1 thành dạng dữ liệu có thứ tự.
+```{R}
+data$RI1 <- factor(data$RI1, levels = c(3, 4, 5), labels = c(1, 2, 3), ordered = TRUE)
+
+table(data$RI1) 
+str(data$RI1)    
+
+```
+
+# Kiểm tra sự tương quan của các biến
+
+```{R}
+
+install.packages("corrplot")
+library(corrplot)
+
+
+cor_matrix <- cor(data[, c("AW1", "AW2", "AW3",  
+                           "AT1", "AT2", "AT3", "AT4", "AT5", "LR1", "LR2", "LR3", "LR4",  
+                           "SP1", "SP2", "SP3", "EF1", "EF2", "EF3", "EF4",  
+                           "INC1", "INC2", "INC3", "INC4")], use = "complete.obs")
+cor_matrix
+
+corrplot(cor_matrix, method = "color", type = "upper", tl.col = "black", tl.srt = 45)
+
+
+
+```
+
+
+```{R}
+install.packages("lavaan")
+library(lavaan)
+
+```
+
+```{R}
+model_cfa <- '
+  Awareness_Attitude =~ AW1 + AW2 + AW3 + AT1 + AT2 + AT3 + AT4 + AT5
+  Law_Regulations =~ LR1 + LR2 + LR3 + LR4
+  Economic_Factors =~ SP1 + SP2 + SP3 + EF1 + EF2 + EF3 + EF4
+  Inconveniences =~ INC1 + INC2 + INC3 + INC4
+'
+
+fit_cfa <- cfa(model_cfa, data = data, std.lv = TRUE)
+
+summary(fit_cfa, fit.measures = TRUE, standardized = TRUE)
+
+factor_scores <- lavPredict(fit_cfa)
+```
+
+#Ước lượng mô hình
+Sau khi khảo sát CFA, các biến Awareness Attitude, Law_Regulations, Economic_Factors, Inconveniences sẽ lấy giá trị factor scores.
+```{R}
+data$Awareness_Attitude <- factor_scores[, "Awareness_Attitude"]
+data$Law_Regulations <- factor_scores[, "Law_Regulations"]
+data$Economic_Factors <- factor_scores[, "Economic_Factors"]
+data$Inconveniences <- factor_scores[, "Inconveniences"]
+
+library(MASS)
+
+modp <- polr(RI1 ~ Age + Education.level + Income + Awareness_Attitude + Law_Regulations + Economic_Factors + Inconveniences, 
+             data = data, Hess = TRUE)
+summary(modp)
+
+```
+
+#Truy xuất ra ước lượng hệ số của mô hình
+```{R}
+coef(modp)
+```
+#Ước lượng tỷ lệ cực - odds ratios:
+```{R}
+exp(coef(modp))
+```
+
+
+#Xác định khoảng tin cậy cho hệ số trong mô hình
+```{R}
+confint.default(modp)
+```
+# mô hình dự đoán
+```{R}
+new_obs <- data.frame(
+  Age = 1,
+  Education.level = 2,
+  Income = 2, 
+  Awareness_Attitude = 4,
+  Law_Regulations = 3,
+  Economic_Factors = 3,
+  Inconveniences = 3
+)
+
+predict(modp, newdata = new_obs, type = "class")
+
+
+```
+Kết quả cho thấy: Mức độ sẵn sàng tham gia các mô hình thu gom rác thải điện tử khi có điều kiện là thuộc mức số 2, tức là đồng ý.
+
+# stepwise model
+
+```{R}
+
+modp_step <- stepAIC(modp, direction = "both", trace = TRUE)
+
+summary(modp_step)
+
+```
+
+
+
+# Phương pháp giảm thiên lệch
+```{R}
+install.packages("brglm2")
+library(brglm2)
+
+```
+```{R}
+modp_firth <- bracl(RI1 ~ Age + Education.level + Income + Awareness_Attitude + Law_Regulations + Economic_Factors + Inconveniences, data = data, method = "brglmFit")
+
+summary(modp_firth)
+```
+
+# So sánh model cũ và model đã điều chỉnh
+
+```{R}
+AIC(modp_step, modp_firth)
+
+
+logLik(modp_step)
+logLik(modp_firth)
+```
+
+
+
+
+
